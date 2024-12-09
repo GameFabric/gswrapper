@@ -99,7 +99,7 @@ gsw --shutdown.ready=1h --shutdown.allocated=24h -- /app/gameserver
 
 Lastly, the crash handler can be configured to run an executable automatically in the event of a server crash.
 
-|                                     |                                   |                                                                                                                                    |
+| Command-line argument               | Environment variable              | Description                                                                                                                        |
 |-------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | `--crashhandler.exec`               | `CRASHHANDLER_EXEC`               | Path to the crash handler executable.                                                                                              |
 | `--crashhandler.args`               | `CRASHHANDLER_ARGS`               | Crash handler arguments. Can be passed multiple times.                                                                             |
