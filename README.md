@@ -30,14 +30,11 @@ The available templating variables are:
 | `{{.Ports}}`          | `map[string]uint16` | The known game server ports.                                                                                                                                                                                |
 | `{{.Env}}`            | `map[string]string` | The environment variables.                                                                                                                                                                                  |
 
-<details>
-<summary>Example</summary>
+#### Example:
 
 ```shell
 gsw -- /app/gameserver --port={{ .GameServerPort }} --query-port={{ .Ports.query }} --servername={{ .Env.POD_NAME }}
 ```
-
-</details>
 
 #### Configuration Files
 
@@ -48,26 +45,23 @@ The available templating variables are the same as the ones for command-line arg
 | Command-line argument    | Environment variable   | Description                                                |
 |--------------------------|------------------------|------------------------------------------------------------|
 | `--config.template-path` | `CONFIG_TEMPLATE_PATH` | Path at which to write the game server configuration file. |
-| `--conifg.output-path`   | `CONFIG_OUTPUT_PATH`   | Path to the configuration file template.                   |
+| `--config.output-path`   | `CONFIG_OUTPUT_PATH`   | Path to the configuration file template.                   |
 
-<details>
-<summary>Example</summary>
+#### Example:
 
 ```yaml
 # template.yaml
 gameserver:
   ip: "{{ .GameServerIP }}"
   port: "{{ .GameServerPort }}"
-  { { - if .Env.POD_NAME } }
-servername: "{{ .Env.POD_NAME }}"
-  { { - end } }
+  {{- if .Env.POD_NAME }}
+  servername: "{{ .Env.POD_NAME }}"
+  {{- end }}
 ```
 
 ```shell
 gsw --config.template-path=template.yaml --config.output-path=config.yaml -- /app/gameserver --config=config.yaml
 ```
-
-</details>
 
 ### Log tailing
 
@@ -77,14 +71,11 @@ The GSW also supports tailing log files and printing them on stdout using the wr
 |-----------------------|----------------------|-------------------------------------------------------------------|
 | `--tail-log.paths`    | `TAIL_LOG_PATHS`     | Paths from which to tail log files. Can be passed multiple times. |
 
-<details>
-<summary>Example</summary>
+#### Example:
 
 ```shell
 gsw --tail-log.paths=gameserver.log --tail-log.paths=error.log -- /app/gameserver
 ```
-
-</details>
 
 ### Shutdown handling
 
@@ -98,14 +89,11 @@ This can be useful to force the shutdown of stuck game servers or allow compacti
 | `--shutdown.ready`     | `SHUTDOWN_READY`     | Shutdown when the game server has been `Ready` for the given duration (default: `0s`, disabled).     |
 | `--shutdown.allocated` | `SHUTDOWN_ALLOCATED` | Shutdown when the game server has been `Allocated` for the given duration (default: `0s`, disabled). |
 
-<details>
-<summary>Example</summary>
+#### Example:
 
 ```shell
 gsw --shutdown.ready=1h --shutdown.allocated=24h -- /app/gameserver
 ```
-
-</details>
 
 ### Crash reporting
 
@@ -117,11 +105,8 @@ Lastly, the crash handler can be configured to run an executable automatically i
 | `--crashhandler.args`               | `CRASHHANDLER_ARGS`               | Crash handler arguments. Can be passed multiple times.                                                                             |
 | `--crashhandler.max-execution-time` | `CRASHHANDLER_MAX_EXECUTION_TIME` | Timeout after which the crash handler should be aborted (default: `30m`). Please add the time unit, as the default is nanoseconds. |
 
-<details>
-<summary>Example</summary>
+#### Example:
 
 ```shell
 gsw --crashhandler.exec=crash.sh --crashhandler.args="{{ .GameServerIP }}" --crashhandler.args="{{ .GameServerPort }}" --crashhandler.max-execution-time=5m
 ```
-
-</details>
