@@ -86,6 +86,7 @@ This can be useful to force the shutdown of stuck game servers or allow compacti
 
 | Command-line argument  | Environment variable | Description                                                                                          |
 |------------------------|----------------------|------------------------------------------------------------------------------------------------------|
+| `--shutdown.scheduled` | `SHUTDOWN_SCHEDULED` | Shutdown when the game server has been `Scheduled` for the given duration (default: `0s`, disabled). |
 | `--shutdown.ready`     | `SHUTDOWN_READY`     | Shutdown when the game server has been `Ready` for the given duration (default: `0s`, disabled).     |
 | `--shutdown.allocated` | `SHUTDOWN_ALLOCATED` | Shutdown when the game server has been `Allocated` for the given duration (default: `0s`, disabled). |
 
