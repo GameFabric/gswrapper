@@ -117,8 +117,8 @@ gsw \
   --post-stop-hook.args="{{ .GameServerIP }}" \
   --post-stop-hook.args="{{ .GameServerPort }}" \
   --post-stop-hook.max-execution-time=5m \
-  --on-error=true \
-  --on-success=false
+  --post-stop-hook.on-error=true \
+  --post-stop-hook.on-success=false
 ```
 
 The GSW provides access to the detected game server exit code and signal (if any)
