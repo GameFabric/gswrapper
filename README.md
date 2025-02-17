@@ -9,7 +9,7 @@ The following features are provided:
 - [Configuration file templating](#configuration-files),
 - [Shutdown handling](#shutdown-handling),
 - [Log tailing](#log-tailing), and
-- [Crash reporting](#crash-reporting).
+- [Post-stop hook](#post-stop-hook) (e.g. crash reporting).
 
 ## Features
 
@@ -30,7 +30,7 @@ The available templating variables are:
 | `{{.Ports}}`          | `map[string]uint16` | The known game server ports.                                                                                                                                                                                |
 | `{{.Env}}`            | `map[string]string` | The environment variables.                                                                                                                                                                                  |
 
-#### Example:
+Example:
 
 ```shell
 gsw -- /app/gameserver --port={{ .GameServerPort }} --query-port={{ .Ports.query }} --servername={{ .Env.POD_NAME }}
@@ -47,7 +47,7 @@ The available templating variables are the same as the ones for command-line arg
 | `--config.template-path` | `CONFIG_TEMPLATE_PATH` | Path at which to write the game server configuration file. |
 | `--config.output-path`   | `CONFIG_OUTPUT_PATH`   | Path to the configuration file template.                   |
 
-#### Example:
+Example:
 
 ```yaml
 # template.yaml
@@ -71,7 +71,7 @@ The GSW also supports tailing log files and printing them on stdout using the wr
 |-----------------------|----------------------|-------------------------------------------------------------------|
 | `--tail-log.paths`    | `TAIL_LOG_PATHS`     | Paths from which to tail log files. Can be passed multiple times. |
 
-#### Example:
+Example:
 
 ```shell
 gsw --tail-log.paths=gameserver.log --tail-log.paths=error.log -- /app/gameserver
@@ -90,24 +90,99 @@ This can be useful to force the shutdown of stuck game servers or allow compacti
 | `--shutdown.ready`     | `SHUTDOWN_READY`     | Shutdown when the game server has been `Ready` for the given duration (default: `0s`, disabled).     |
 | `--shutdown.allocated` | `SHUTDOWN_ALLOCATED` | Shutdown when the game server has been `Allocated` for the given duration (default: `0s`, disabled). |
 
-#### Example:
+Example:
 
 ```shell
-gsw --shutdown.ready=1h --shutdown.allocated=24h -- /app/gameserver
+gsw --shutdown.scheduled=24h --shutdown.ready=1h --shutdown.allocated=24h -- /app/gameserver
 ```
 
-### Crash reporting
+### Post-stop hook
 
-Lastly, the crash handler can be configured to run an executable automatically in the event of a server crash.
+Lastly, the post-stop hook allows the configuration of an executable, provided by the container image, that runs after the game server has stopped.
+One use-case could be a crash handler, uploading the core dump for further processing.
 
-| Command-line argument               | Environment variable              | Description                                                                                                                        |
-|-------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| `--crashhandler.exec`               | `CRASHHANDLER_EXEC`               | Path to the crash handler executable.                                                                                              |
-| `--crashhandler.args`               | `CRASHHANDLER_ARGS`               | Crash handler arguments. Can be passed multiple times.                                                                             |
-| `--crashhandler.max-execution-time` | `CRASHHANDLER_MAX_EXECUTION_TIME` | Timeout after which the crash handler should be aborted (default: `30m`). Please add the time unit, as the default is nanoseconds. |
+| Command-line argument                 | Environment variable                | Description                                                                                                                                                     |
+|---------------------------------------|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--post-stop-hook.path`               | `POST_STOP_HOOK_PATH`               | Path to the post-stop hook.                                                                                                                                     |
+| `--post-stop-hook.args`               | `POST_STOP_HOOK_ARGS`               | The post-stop hooks arguments. Can be used multiple times.                                                                                                      |
+| `--post-stop-hook.max-execution-time` | `POST_STOP_HOOK_MAX_EXECUTION_TIME` | Maximum execution time for the post-stop hook (default: `30m`). Eventually reduced to the termination grace period if a shutdown is already in progress.        |
+| `--post-stop-hook.on-error`           | `POST_STOP_HOOK_ON_ERROR`           | Determines if the post-start hook should run, when the game server exited with a non-zero exit code. Core dump crashes always cause the post-start hook to run. |
+| `--post-stop-hook.on-success`         | `POST_STOP_HOOK_ON_SUCCESS`         | Determines if the post-start hook should run, when the game server exited with exit code 0.                                                                     |
 
-#### Example:
+Example:
 
 ```shell
-gsw --crashhandler.exec=crash.sh --crashhandler.args="{{ .GameServerIP }}" --crashhandler.args="{{ .GameServerPort }}" --crashhandler.max-execution-time=5m
+gsw \
+  --post-stop-hook.path=hook.sh \
+  --post-stop-hook.args="{{ .GameServerIP }}" \
+  --post-stop-hook.args="{{ .GameServerPort }}" \
+  --post-stop-hook.max-execution-time=5m \
+  --on-error=true \
+  --on-success=false
+```
+
+The GSW provides access to the detected game server exit code and signal (if any)
+by setting the the environment variables `GAMESERVER_EXITCODE` (`int`) and `GAMESERVER_SIGNAL` (`string`) accordingly before calling the hook.
+
+Example `hook.sh`:
+
+```/bin/sh
+# Game server success (hook called only if --post-stop-hook.on-success=true)
+# GAMESERVER_EXITCODE=0
+# GAMESERVER_EXITSIGNAL="-1"
+
+# Game server error (hook called only if --post-stop-hook.on-error=true)
+# GAMESERVER_EXITCODE=1
+# GAMESERVER_EXITSIGNAL="-1"
+
+# Game server crash (e.g. SIGSEGV)
+# GAMESERVER_EXITCODE="-1"
+# GAMESERVER_SIGNAL=11
+
+echo "Post-stop hook here. Game server exited with code $GAMESERVER_EXITCODE / signal $GAMESERVER_EXITSIGNAL."
+```
+
+The `stdout` and `stderr` output of the hook is caught and each attached as one-line message to the GSW logger.
+
+Example output:
+
+```
+lvl=info msg="Game server exit code: \"0\"\nGame server exit signal: \"-1\"\nIndex: 1\nIndex: 2\nIndex: 3\nIndex: 4\nIndex: 5\nIndex: 6\nIndex: 7\nIndex: 8\nIndex: 9\nIndex: 10\n" svc=gswrapper output=stdout
+lvl=eror msg= svc=gswrapper output=stderr
+```
+
+## Deprecated Features
+
+- `--crashhandler.exec` / `CRASHHANDLER_EXEC`: Use `--post-stop-hook.path` /  `POST_STOP_HOOK_PATH` instead.
+- `--crashhandler.args` / `CRASHHANDLER_ARGS`: Use `--post-stop-hook.args` /  `POST_STOP_HOOK_ARGS` instead.
+- `--crashhandler.max-execution-time` / `CRASHHANDLER_MAX_EXECUTION_TIME`: Use `--post-stop-hook.max-execution-time` /  `POST_STOP_HOOK_MAX_EXECUTION_TIME`
+  instead.
+
+## Exit codes
+
+The game server wrapper exits with code `0` (success), if:
+
+- the game server exited with code `0`, and
+- there either is
+    - no post-stop hook set, or
+    - no post-stop hook condition applies, or
+    - post-stop hook exited with code `0`.
+
+For any other situation, the exit code is `1` (error).
+
+Examples:
+```
+lvl=info msg="Starting game server" svc=gswrapper
+lvl=info msg="Game server stopped" svc=gswrapper runtimeSeconds=10.007 exitCode=0 exitSignal=-1
+
+lvl=info msg="Starting post-stop hook" svc=gswrapper
+lvl=info msg="Post-stop hook stopped" svc=gswrapper runtimeSeconds=10.042 exitCode=0 exitSignal=-1
+```
+
+```
+lvl=info msg="Starting game server" svc=gswrapper
+lvl=eror msg="Game server stopped with error" svc=gswrapper runtimeSeconds=10.015 exitCode=1 exitSignal=-1 error="gsemu exited: exit status 1"
+
+lvl=info msg="Starting post-stop hook" svc=gswrapper
+lvl=eror msg="Post-stop hook stopped with error" svc=gswrapper runtimeSeconds=3.014 exitCode=-1 exitSignal=-1 error="post-stop hook timed out: context deadline exceeded"
 ```
