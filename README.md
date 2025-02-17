@@ -101,13 +101,14 @@ gsw --shutdown.scheduled=24h --shutdown.ready=1h --shutdown.allocated=24h -- /ap
 Lastly, the post-stop hook allows the configuration of an executable, provided by the container image, that runs after the game server has stopped.
 One use-case could be a crash handler, uploading the core dump for further processing.
 
-| Command-line argument                 | Environment variable                | Description                                                                                                                                                     |
-|---------------------------------------|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--post-stop-hook.path`               | `POST_STOP_HOOK_PATH`               | Path to the post-stop hook.                                                                                                                                     |
-| `--post-stop-hook.args`               | `POST_STOP_HOOK_ARGS`               | The post-stop hooks arguments. Can be used multiple times.                                                                                                      |
-| `--post-stop-hook.max-execution-time` | `POST_STOP_HOOK_MAX_EXECUTION_TIME` | Maximum execution time for the post-stop hook (default: `30m`). Eventually reduced to the termination grace period if a shutdown is already in progress.        |
-| `--post-stop-hook.on-error`           | `POST_STOP_HOOK_ON_ERROR`           | Determines if the post-start hook should run, when the game server exited with a non-zero exit code. Core dump crashes always cause the post-start hook to run. |
-| `--post-stop-hook.on-success`         | `POST_STOP_HOOK_ON_SUCCESS`         | Determines if the post-start hook should run, when the game server exited with exit code 0.                                                                     |
+| Command-line argument                 | Environment variable                | Description                                                                                                                                                                                                                                             |
+|---------------------------------------|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--post-stop-hook.path`               | `POST_STOP_HOOK_PATH`               | Path to the post-stop hook.                                                                                                                                                                                                                             |
+| `--post-stop-hook.args`               | `POST_STOP_HOOK_ARGS`               | The post-stop hooks arguments. Can be used multiple times.                                                                                                                                                                                              |
+| `--post-stop-hook.max-execution-time` | `POST_STOP_HOOK_MAX_EXECUTION_TIME` | Maximum execution time for the post-stop hook (default: `30m`). Warning: The maximum execution time cannot exceed the termination grace period, which is set to 30s. This can be configured on GameFabric-Armadas/Formations-Settings-Advanced section. |
+| `--post-stop-hook.on-error`           | `POST_STOP_HOOK_ON_ERROR`           | Determines if the post-start hook should run, when the game server exited with a non-zero exit code. Core dump crashes always cause the post-start hook to run.                                                                                         |
+| `--post-stop-hook.on-success`         | `POST_STOP_HOOK_ON_SUCCESS`         | Determines if the post-start hook should run, when the game server exited with exit code 0.                                                                                                                                                             |
+
 
 Example:
 
