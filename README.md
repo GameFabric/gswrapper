@@ -96,19 +96,21 @@ Example:
 gsw --shutdown.scheduled=24h --shutdown.ready=1h --shutdown.allocated=24h -- /app/gameserver
 ```
 
-### Post-stop hook
+### Post-Stop Hook
 
-Lastly, the post-stop hook allows the configuration of an executable, provided by the container image, that runs after the game server has stopped.
-One use-case could be a crash handler, uploading the core dump for further processing.
+A Post-Stop hook allows an executable to run after the game server stops. It can be configured to trigger in both error and non-error scenarios — whether the server exits due to a failure or shuts down normally.  
 
-| Command-line argument                 | Environment variable                | Description                                                                                                                                                                                                                                             |
-|---------------------------------------|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--post-stop-hook.path`               | `POST_STOP_HOOK_PATH`               | Path to the post-stop hook.                                                                                                                                                                                                                             |
-| `--post-stop-hook.args`               | `POST_STOP_HOOK_ARGS`               | The post-stop hooks arguments. Can be used multiple times.                                                                                                                                                                                              |
-| `--post-stop-hook.max-execution-time` | `POST_STOP_HOOK_MAX_EXECUTION_TIME` | Maximum execution time for the post-stop hook (default: `30m`). Warning: The maximum execution time cannot exceed the termination grace period, which is set to 30s. This can be configured on GameFabric-Armadas/Formations-Settings-Advanced section. |
-| `--post-stop-hook.on-error`           | `POST_STOP_HOOK_ON_ERROR`           | Determines if the post-start hook should run, when the game server exited with a non-zero exit code. Core dump crashes always cause the post-start hook to run.                                                                                         |
-| `--post-stop-hook.on-success`         | `POST_STOP_HOOK_ON_SUCCESS`         | Determines if the post-start hook should run, when the game server exited with exit code 0.                                                                                                                                                             |
+Once the game server stops, the Post-Stop hook runs the configured executable. The executable can, for example, analyze a core dump to generate a stack trace or upload the full dump for further investigation.  
 
+The path to the executable must be specified, and the executable file itself must be present at the path in the image and carry the executable flag.
+
+| Command-line argument                 | Environment variable                | Description                                                                                                                                                                                                                                                   |
+|---------------------------------------|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--post-stop-hook.path`               | `POST_STOP_HOOK_PATH`               | Path to the executable to be run.                                                                                                                                                                                                                             |
+| `--post-stop-hook.args`               | `POST_STOP_HOOK_ARGS`               | The arguments passed to the executable. Can be used multiple times.                                                                                                                                                                                           |
+| `--post-stop-hook.max-execution-time` | `POST_STOP_HOOK_MAX_EXECUTION_TIME` | Maximum execution time for the Post-Stop hook (default: `30m`). Warning: When the game server is in the Agones state 'Shutdown', the maximum execution time cannot exceed the termination grace period, which is set to 30s by default. This can be configured on GameFabric > Armadas/Formations > Settings > Advanced section. |
+| `--post-stop-hook.on-error`           | `POST_STOP_HOOK_ON_ERROR`           | Determines if the Post-Stop hook should run when the game server exited with a non-zero exit code. Core dump crashes always cause the Post-Stop hook to run.                                                                                                |
+| `--post-stop-hook.on-success`         | `POST_STOP_HOOK_ON_SUCCESS`         | Determines if the Post-Stop hook should run when the game server exited with exit code 0.                                                                                                                                                                    |
 
 Example:
 
@@ -122,8 +124,7 @@ gsw \
   --post-stop-hook.on-success=false
 ```
 
-The GSW provides access to the detected game server exit code and signal (if any)
-by setting the the environment variables `GAMESERVER_EXITCODE` (`int`) and `GAMESERVER_SIGNAL` (`string`) accordingly before calling the hook.
+Before invoking the hook, the GSW sets the environment variables `GAMESERVER_EXITCODE` (`int`) and `GAMESERVER_EXITSIGNAL` (`int`) to expose the detected game server exit code and signal (if applicable).
 
 Example `hook.sh`:
 
@@ -140,7 +141,7 @@ Example `hook.sh`:
 # GAMESERVER_EXITCODE="-1"
 # GAMESERVER_SIGNAL=11
 
-echo "Post-stop hook here. Game server exited with code $GAMESERVER_EXITCODE / signal $GAMESERVER_EXITSIGNAL."
+echo "Post-Stop hook here. Game server exited with code $GAMESERVER_EXITCODE / signal $GAMESERVER_EXITSIGNAL."
 ```
 
 The `stdout` and `stderr` output of the hook is caught and each attached as one-line message to the GSW logger.
@@ -165,9 +166,9 @@ The game server wrapper exits with code `0` (success), if:
 
 - the game server exited with code `0`, and
 - there either is
-    - no post-stop hook set, or
-    - no post-stop hook condition applies, or
-    - post-stop hook exited with code `0`.
+    - no Post-Stop hook set, or
+    - no Post-Stop hook condition applies, or
+    - Post-Stop hook exited with code `0`.
 
 For any other situation, the exit code is `1` (error).
 
