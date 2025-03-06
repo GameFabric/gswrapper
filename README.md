@@ -7,7 +7,6 @@ The GSW is dependency-free with one exception.
 It communicates with the Agones sidecar container via localhost which is always available in GameFabric.
 If you want to run it locally for development, you need run the Agones SDK server dummy locally
 (see [Agones documentation](https://agones.dev/site/docs/guides/client-sdks/local/)).
-For further documentation see our [GameFabric docs of the GSW](https://docs.gamefabric.com/multiplayer-servers/multiplayer-services/game-server-wrapper).
 
 
 The following features are provided:
@@ -195,3 +194,7 @@ lvl=eror msg="Game server stopped with error" svc=gswrapper runtimeSeconds=10.01
 lvl=info msg="Starting post-stop hook" svc=gswrapper
 lvl=eror msg="Post-stop hook stopped with error" svc=gswrapper runtimeSeconds=3.014 exitCode=-1 exitSignal=-1 error="post-stop hook timed out: context deadline exceeded"
 ```
+
+
+## more documentation
+For further documentation see our [GameFabric docs of the GSW](https://docs.gamefabric.com/multiplayer-servers/multiplayer-services/game-server-wrapper).
