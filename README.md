@@ -3,7 +3,7 @@
 The game server wrapper, also known as `gswrapper` or `gsw`, can be used to run a game server executable
 from within the container image that runs your GameFabric Armadas or Vessels.
 
-The wrapper is dependency-free with one exception.
+The GSW is dependency-free with one exception.
 It communicates with the Agones sidecar container via localhost which is always available in GameFabric.
 If you want to run it locally for development, you need run the Agones SDK server dummy locally
 (see [Agones documentation](https://agones.dev/site/docs/guides/client-sdks/local/)).
