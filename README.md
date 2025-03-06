@@ -196,5 +196,5 @@ lvl=eror msg="Post-stop hook stopped with error" svc=gswrapper runtimeSeconds=3.
 ```
 
 
-## more documentation
+## More documentation
 For further documentation see our [GameFabric docs of the GSW](https://docs.gamefabric.com/multiplayer-servers/multiplayer-services/game-server-wrapper).
